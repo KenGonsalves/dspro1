@@ -416,7 +416,11 @@ with col1:
             <h4 style='color:#ef4444;margin:0;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;'>⚠️ CRITICAL ALARM</h4>
             <h2 style='margin:10px 0;font-size:1.8rem;font-weight:700;'>BREACH</h2>
             <p style='margin:0;font-size:12px;color:rgba(255,255,255,0.7);'>Asset requires immediate inspection.</p>
-        </div>""", unsafe_allow_html=True)
+        </div>
+        <audio autoplay loop>
+            <source src="https://www.soundjay.com/mechanical/sounds/smoke-detector-1.mp3" type="audio/mpeg">
+            <source src="https://www.soundjay.com/buttons/sounds/beep-07a.mp3" type="audio/mpeg">
+        </audio>""", unsafe_allow_html=True)
     else:
         st.markdown(f"""<div class='success-card'>
             <h4 style='color:#22c55e;margin:0;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;'>🟢 SYSTEM HEALTH</h4>
