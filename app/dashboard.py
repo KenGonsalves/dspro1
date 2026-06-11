@@ -1,5 +1,7 @@
 import os
 import time
+import hashlib
+import json
 import joblib
 import pandas as pd
 import numpy as np
@@ -7,13 +9,57 @@ import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
 
+# Initialize authentication session states early
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "auth_username" not in st.session_state:
+    st.session_state.auth_username = ""
+
 # 🎨 Professional Web Page Layout Configuration
 st.set_page_config(
     page_title="AegisMind | Industrial Predictive Radar",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded" if st.session_state.authenticated else "collapsed"
 )
+
+# User Database Helper Functions
+USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
+
+def load_users():
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_users(users):
+    try:
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=4)
+    except Exception as e:
+        st.error(f"Error saving user data: {e}")
+
+def hash_password(password, salt="aegis_salt_993"):
+    hash_obj = hashlib.sha256()
+    hash_obj.update((password + salt).encode('utf-8'))
+    return hash_obj.hexdigest()
+
+def create_user(username, password):
+    users = load_users()
+    if username in users:
+        return False, "Username already exists."
+    users[username] = hash_password(password)
+    save_users(users)
+    return True, "Operator account registered successfully."
+
+def verify_user(username, password):
+    users = load_users()
+    if username not in users:
+        return False
+    return users[username] == hash_password(password)
 
 # Custom CSS styling to make it look like a high-end enterprise SaaS dashboard
 st.markdown("""
@@ -100,6 +146,36 @@ st.markdown("""
         overflow: hidden !important;
     }
     
+    /* Authentication Panel */
+    .auth-title {
+        font-size: 2.2rem !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.5px !important;
+        background: linear-gradient(135deg, #f3f4f6 30%, #a855f7) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        margin-bottom: 5px !important;
+        text-align: center !important;
+    }
+    .auth-subtitle {
+        font-size: 0.85rem !important;
+        color: #9ca3af !important;
+        letter-spacing: 1.5px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 25px !important;
+        text-align: center !important;
+    }
+    .auth-card {
+        background: rgba(13, 17, 28, 0.75) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        padding: 40px !important;
+        box-shadow: 0 20px 50px -15px rgba(0,0,0,0.8), 0 0 30px rgba(168, 85, 247, 0.12) !important;
+        margin-top: 50px !important;
+    }
+    
     /* Animations */
     @keyframes pulse-border-red {
         0%, 100% { border-color: rgba(239, 68, 68, 0.2); }
@@ -108,19 +184,61 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# 🔒 ACCESS CONTROL / ROUTING GATEWAY
+if not st.session_state.authenticated:
+    col_l, col_c, col_r = st.columns([1, 1.6, 1])
+    with col_c:
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+        st.markdown('<h1 class="auth-title">🛡️ AEGIS-MIND</h1>', unsafe_allow_html=True)
+        st.markdown('<p class="auth-subtitle">Industrial Prediction Gateway</p>', unsafe_allow_html=True)
+        
+        tab_login, tab_register = st.tabs(["🔒 Secure Login", "📝 Operator Registration"])
+        
+        with tab_login:
+            login_user = st.text_input("Operator Username", key="login_user_input", placeholder="Enter username")
+            login_pass = st.text_input("Security Access Code", type="password", key="login_pass_input", placeholder="••••••••")
+            
+            if st.button("Authorize Access", use_container_width=True):
+                if not login_user or not login_pass:
+                    st.error("Please fill in all operator identification credentials.")
+                elif verify_user(login_user, login_pass):
+                    st.session_state.authenticated = True
+                    st.session_state.auth_username = login_user
+                    st.success("Authorization granted. Initializing AegisMind Radar...")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("Access denied. Invalid operator credentials.")
+                    
+        with tab_register:
+            reg_user = st.text_input("New Operator Username", key="reg_user_input", placeholder="Choose username")
+            reg_pass = st.text_input("New Security Access Code", type="password", key="reg_pass_input", placeholder="At least 6 characters")
+            reg_confirm = st.text_input("Confirm Access Code", type="password", key="reg_confirm_input", placeholder="Re-enter access code")
+            
+            if st.button("Register Operator", use_container_width=True):
+                if not reg_user or not reg_pass:
+                    st.error("Username and access code are required.")
+                elif reg_pass != reg_confirm:
+                    st.error("Access codes do not match.")
+                elif len(reg_pass) < 6:
+                    st.error("Access code must be at least 6 characters.")
+                else:
+                    success, msg = create_user(reg_user, reg_pass)
+                    if success:
+                        st.session_state.authenticated = True
+                        st.session_state.auth_username = reg_user
+                        st.success(f"Registration complete. Welcome {reg_user}!")
+                        time.sleep(0.8)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+                        
+        st.markdown('</div>', unsafe_allow_html=True)
+    # Stop rendering the rest of the app
+    st.stop()
+
+
 # 🔒 Load the Core Hybrid Pipeline Component Safely
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "machine_failure_model.joblib")
-
-@st.cache_resource
-def load_production_pipeline():
-    if os.path.exists(MODEL_PATH):
-        payload = joblib.load(MODEL_PATH)
-        return (payload['scaler'], payload['anomaly_extractor'], 
-                payload['core_predictor'], payload['optimal_threshold'])
-    else:
-        st.error(f"❌ Structural Critical Error: Model binary missing at {MODEL_PATH}")
-        return None, None, None, None
-
 scaler, anomaly_extractor, core_predictor, optimal_threshold = load_production_pipeline()
 
 # ⏳ Maintain stateful history queues across page re-runs
@@ -377,6 +495,18 @@ st.dataframe(
     width='stretch',
     hide_index=True
 )
+
+# 🔒 Sidebar Operator Controls & Logout
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"**Authorized Operator:** `{st.session_state.auth_username}`")
+if st.sidebar.button("Logout Session", use_container_width=True):
+    st.session_state.authenticated = False
+    st.session_state.auth_username = ""
+    # Reset history
+    st.session_state.df_history = pd.DataFrame(columns=[
+        'Timestamp', 'Air_Temp', 'Proc_Temp', 'Speed', 'Torque', 'Tool_Wear', 'Risk_Prob', 'Anomaly_Score'
+    ])
+    st.rerun()
 
 # ⏳ Live Mode Simulation Random Walk Loop
 if is_live:

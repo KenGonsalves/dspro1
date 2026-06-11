@@ -5,3 +5,5 @@ frontend/
 .DS_Store
 .gemini/
 css_guide.md
+users.json
+app/users.json
