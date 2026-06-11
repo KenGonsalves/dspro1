@@ -239,6 +239,18 @@ if not st.session_state.authenticated:
 
 
 # 🔒 Load the Core Hybrid Pipeline Component Safely
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "machine_failure_model.joblib")
+
+@st.cache_resource
+def load_production_pipeline():
+    if os.path.exists(MODEL_PATH):
+        payload = joblib.load(MODEL_PATH)
+        return (payload['scaler'], payload['anomaly_extractor'], 
+                payload['core_predictor'], payload['optimal_threshold'])
+    else:
+        st.error(f"❌ Structural Critical Error: Model binary missing at {MODEL_PATH}")
+        return None, None, None, None
+
 scaler, anomaly_extractor, core_predictor, optimal_threshold = load_production_pipeline()
 
 # ⏳ Maintain stateful history queues across page re-runs
