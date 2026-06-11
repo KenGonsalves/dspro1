@@ -2,6 +2,7 @@ import os
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 
@@ -9,6 +10,14 @@ app = FastAPI(
     title="AegisMind Live Hybrid Radar",
     description="Production-Grade Leakage-Proof Isolation Forest + XGBoost Gateway.",
     version="10.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "machine_failure_model.joblib")
@@ -117,3 +126,16 @@ def predict_machine_status(telemetry: MachineTelemetry):
         
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Hybrid Core Exception: {str(err)}")
+
+@app.get("/info")
+def get_model_info():
+    return {
+        "optimal_threshold": round(optimal_threshold, 4),
+        "model_version": "v10.0.0"
+    }
+
+# Serve React static assets if the production build directory exists
+from fastapi.staticfiles import StaticFiles
+frontend_dist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(frontend_dist_path):
+    app.mount("/", StaticFiles(directory=frontend_dist_path, html=True), name="frontend")

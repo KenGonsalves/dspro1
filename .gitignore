@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+frontend/
+.DS_Store
+.gemini/
+css_guide.md
