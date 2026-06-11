@@ -61,6 +61,8 @@ def verify_user(username, password):
         return False
     return users[username] == hash_password(password)
 
+ALARM_WAV_B64 = "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"
+
 # Custom CSS styling to make it look like a high-end enterprise SaaS dashboard
 st.markdown("""
     <style>
@@ -417,10 +419,27 @@ with col1:
             <h2 style='margin:10px 0;font-size:1.8rem;font-weight:700;'>BREACH</h2>
             <p style='margin:0;font-size:12px;color:rgba(255,255,255,0.7);'>Asset requires immediate inspection.</p>
         </div>
-        <audio autoplay loop>
-            <source src="https://www.soundjay.com/mechanical/sounds/smoke-detector-1.mp3" type="audio/mpeg">
-            <source src="https://www.soundjay.com/buttons/sounds/beep-07a.mp3" type="audio/mpeg">
-        </audio>""", unsafe_allow_html=True)
+        <audio id="alarm-audio" autoplay loop>
+            <source src="data:audio/wav;base64,{ALARM_WAV_B64}" type="audio/wav">
+        </audio>
+        <script>
+            var audio = document.getElementById("alarm-audio");
+            if (audio) {{
+                audio.play().catch(function(error) {{
+                    console.log("Autoplay blocked. Registering interaction listener...");
+                    var playAudio = function() {{
+                        audio.play().then(function() {{
+                            console.log("Audio playing successfully.");
+                            document.removeEventListener('click', playAudio);
+                            document.removeEventListener('touchstart', playAudio);
+                        }});
+                    }};
+                    document.addEventListener('click', playAudio);
+                    document.addEventListener('touchstart', playAudio);
+                }});
+            }}
+        </script>
+        """, unsafe_allow_html=True)
     else:
         st.markdown(f"""<div class='success-card'>
             <h4 style='color:#22c55e;margin:0;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;'>🟢 SYSTEM HEALTH</h4>
